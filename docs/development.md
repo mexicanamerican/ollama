@@ -1,144 +1,120 @@
 # Development
 
-Install required tools:
+Install prerequisites:
 
-- cmake version 3.24 or higher
-- go version 1.22 or higher
-- gcc version 11.4.0 or higher
+- [Go](https://go.dev/doc/install)
+- C/C++ Compiler e.g. Clang on macOS, [TDM-GCC](https://jmeubank.github.io/tdm-gcc/download/) (Windows amd64) or [llvm-mingw](https://github.com/mstorsjo/llvm-mingw) (Windows arm64), GCC/Clang on Linux.
 
-```bash
-brew install go cmake gcc
-```
-
-Optionally enable debugging and more verbose logging:
-
-```bash
-# At build time
-export CGO_CFLAGS="-g"
-
-# At runtime
-export OLLAMA_DEBUG=1
-```
-
-Get the required libraries and build the native LLM code:
-
-```bash
-go generate ./...
-```
-
-Then build ollama:
-
-```bash
-go build .
-```
-
-Now you can run `ollama`:
-
-```bash
-./ollama
-```
-
-### Linux
-
-#### Linux CUDA (NVIDIA)
-
-_Your operating system distribution may already have packages for NVIDIA CUDA. Distro packages are often preferable, but instructions are distro-specific. Please consult distro-specific docs for dependencies if available!_
-
-Install `cmake` and `golang` as well as [NVIDIA CUDA](https://developer.nvidia.com/cuda-downloads)
-development and runtime packages.
-
-Typically the build scripts will auto-detect CUDA, however, if your Linux distro
-or installation approach uses unusual paths, you can specify the location by
-specifying an environment variable `CUDA_LIB_DIR` to the location of the shared
-libraries, and `CUDACXX` to the location of the nvcc compiler. You can customize
-set set of target CUDA architectues by setting `CMAKE_CUDA_ARCHITECTURES` (e.g. "50;60;70")
-
-Then generate dependencies:
+Then build and run Ollama from the root directory of the repository:
 
 ```
-go generate ./...
+go run . serve
 ```
 
-Then build the binary:
+## macOS (Apple Silicon)
+
+macOS Apple Silicon supports Metal which is built-in to the Ollama binary. No additional steps are required.
+
+## macOS (Intel)
+
+Install prerequisites:
+
+- [CMake](https://cmake.org/download/) or `brew install cmake`
+
+Then, configure and build the project:
 
 ```
-go build .
+cmake -B build
+cmake --build build
 ```
 
-#### Linux ROCm (AMD)
-
-_Your operating system distribution may already have packages for AMD ROCm and CLBlast. Distro packages are often preferable, but instructions are distro-specific. Please consult distro-specific docs for dependencies if available!_
-
-Install [CLBlast](https://github.com/CNugteren/CLBlast/blob/master/doc/installation.md) and [ROCm](https://rocm.docs.amd.com/en/latest/deploy/linux/quick_start.html) development packages first, as well as `cmake` and `golang`.
-
-Typically the build scripts will auto-detect ROCm, however, if your Linux distro
-or installation approach uses unusual paths, you can specify the location by
-specifying an environment variable `ROCM_PATH` to the location of the ROCm
-install (typically `/opt/rocm`), and `CLBlast_DIR` to the location of the
-CLBlast install (typically `/usr/lib/cmake/CLBlast`). You can also customize
-the AMD GPU targets by setting AMDGPU_TARGETS (e.g. `AMDGPU_TARGETS="gfx1101;gfx1102"`)
+Lastly, run Ollama:
 
 ```
-go generate ./...
+go run . serve
 ```
 
-Then build the binary:
+## Windows
+
+Install prerequisites:
+
+- [CMake](https://cmake.org/download/)
+- [Visual Studio 2022](https://visualstudio.microsoft.com/downloads/) including the Native Desktop Workload
+- (Optional) AMD GPU support
+    - [ROCm](https://rocm.github.io/install.html)
+    - [Ninja](https://github.com/ninja-build/ninja/releases)
+- (Optional) NVIDIA GPU support
+    - [CUDA SDK](https://developer.nvidia.com/cuda-downloads?target_os=Windows&target_arch=x86_64&target_version=11&target_type=exe_network)
+
+> [!IMPORTANT]
+> Ensure prerequisites are in `PATH` before running CMake.
+
+> [!IMPORTANT]
+> ROCm is not compatible with Visual Studio CMake generators. Use `-GNinja` when configuring the project.
+
+> [!IMPORTANT]
+> CUDA is only compatible with Visual Studio CMake generators.
+
+Then, configure and build the project:
 
 ```
-go build .
+cmake -B build
+cmake --build build --config Release
 ```
 
-ROCm requires elevated privileges to access the GPU at runtime. On most distros you can add your user account to the `render` group, or run as root.
-
-#### Advanced CPU Settings
-
-By default, running `go generate ./...` will compile a few different variations
-of the LLM library based on common CPU families and vector math capabilities,
-including a lowest-common-denominator which should run on almost any 64 bit CPU
-somewhat slowly. At runtime, Ollama will auto-detect the optimal variation to
-load. If you would like to build a CPU-based build customized for your
-processor, you can set `OLLAMA_CUSTOM_CPU_DEFS` to the llama.cpp flags you would
-like to use. For example, to compile an optimized binary for an Intel i9-9880H,
-you might use:
+Lastly, run Ollama:
 
 ```
-OLLAMA_CUSTOM_CPU_DEFS="-DLLAMA_AVX=on -DLLAMA_AVX2=on -DLLAMA_F16C=on -DLLAMA_FMA=on" go generate ./...
-go build .
+go run . serve
 ```
 
-#### Containerized Linux Build
+## Windows (ARM)
 
-If you have Docker available, you can build linux binaries with `./scripts/build_linux.sh` which has the CUDA and ROCm dependencies included. The resulting binary is placed in `./dist`
+Windows ARM does not support additional acceleration libraries at this time.
 
-### Windows
+## Linux
 
-Note: The windows build for Ollama is still under development.
+Install prerequisites:
 
-Install required tools:
+- [CMake](https://cmake.org/download/) or `sudo apt install cmake` or `sudo dnf install cmake`
+- (Optional) AMD GPU support
+    - [ROCm](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/install/quick-start.html)
+- (Optional) NVIDIA GPU support
+    - [CUDA SDK](https://developer.nvidia.com/cuda-downloads)
 
-- MSVC toolchain - C/C++ and cmake as minimal requirements - You must build from a "Developer Shell" with the environment variables set
-- go version 1.22 or higher
-- MinGW (pick one variant) with GCC.
-  - <https://www.mingw-w64.org/>
-  - <https://www.msys2.org/>
+> [!IMPORTANT]
+> Ensure prerequisites are in `PATH` before running CMake.
 
-```powershell
-$env:CGO_ENABLED="1"
 
-go generate ./...
+Then, configure and build the project:
 
-go build .
+```
+cmake -B build
+cmake --build build
 ```
 
-#### Windows CUDA (NVIDIA)
+Lastly, run Ollama:
 
-In addition to the common Windows development tools described above, install CUDA **AFTER** you install MSVC.
+```
+go run . serve
+```
 
-- [NVIDIA CUDA](https://docs.nvidia.com/cuda/cuda-installation-guide-microsoft-windows/index.html)
+## Docker
 
+```
+docker build .
+```
 
-#### Windows ROCm (AMD Radeon)
+### ROCm
 
-In addition to the common Windows development tools described above, install AMDs HIP package **AFTER** you install MSVC
+```
+docker build --build-arg FLAVOR=rocm .
+```
 
-- [AMD HIP](https://www.amd.com/en/developer/resources/rocm-hub/hip-sdk.html)
+## Running tests
+
+To run tests, use `go test`:
+
+```
+go test ./...
+```
